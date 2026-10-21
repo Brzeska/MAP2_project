@@ -1,0 +1,106 @@
+COLABFOLD WORKFLOW (roommate's Linux machine)
+=============================================
+
+Project folder: ~/Desktop/phillip_protein_playgorund
+Everything (pixi, LocalColabFold, AlphaFold weights, PyMOL, caches) lives
+inside that folder. Nothing was added to ~/.bashrc.
+
+
+0. EVERY SESSION, START WITH
+----------------------------
+    source ~/Desktop/phillip_protein_playgorund/env.sh
+    cd "$PROJ"
+
+This puts colabfold_batch and pymol on your PATH, keeps all caches/configs
+inside the folder, and moves you into it. Every new terminal needs this.
+
+
+1. WRITE THE FASTA
+------------------
+Make the inputs folder once:
+    mkdir -p inputs
+
+Create a file, e.g.:
+    vim inputs/myprotein.fasta
+
+Contents:
+    >myprotein
+    MKTAYIAKQRQISFVKSHFSRQ...
+
+- The header (after ">") becomes the prefix of every output file name.
+  Keep it short, no spaces.
+- Sequence = one-letter amino acid codes. Line breaks inside it are fine.
+- Several ">" entries in one file = each predicted separately.
+- For a complex, put the chains in ONE entry separated by ":".
+
+
+2. RUN THE PREDICTION
+---------------------
+    colabfold_batch inputs/myprotein.fasta results/myprotein
+
+- The second argument is the output folder; it's created if missing.
+  That's where everything gets written.
+- Weights are already downloaded, so runs start faster than the first test.
+- Longer sequences take longer; the 8 GB card limits max sequence length.
+- Rerunning into the same output folder skips sequences already predicted.
+  Add --overwrite-existing-results to redo them.
+- The log should say "Running on GPU".
+- The MSA step uses the shared public server (api.colabfold.com). It's
+  rate-limited; fine for dozens to hundreds of sequences, not thousands.
+  If it stalls, wait and rerun.
+
+
+3. WHAT'S IN THE OUTPUT FOLDER (results/myprotein/)
+---------------------------------------------------
+All files start with your FASTA header.
+
+    *_unrelaxed_rank_001_*.pdb ... rank_005   the 5 predicted structures,
+                                              best first
+    *_plddt.png                per-residue confidence plot
+    *_pae.png                  predicted aligned error plot
+    *_coverage.png             MSA depth along the sequence
+    *_scores_rank_00N_*.json   confidence numbers
+    log.txt                    what happened in the run: per-model pLDDT/pTM
+                               and the final ranking
+    config.json                settings used (model, recycles, MSA mode)
+    *.a3m                      the multiple sequence alignment
+
+
+4. LOOK AT THE STRUCTURE
+------------------------
+From $PROJ:
+    pymol results/myprotein/*rank_001*.pdb color_plddt.py
+
+The PDB must come first, then the script.
+
+Colors (pLDDT, stored in the B-factor column):
+    dark blue    > 90     very high confidence
+    light blue   70-90    confident (backbone usually right)
+    yellow       50-70    low
+    orange       < 50     don't read as real structure; often disorder
+
+See the plots:
+    xdg-open results/myprotein
+
+
+5. READING CONFIDENCE
+---------------------
+- pLDDT: per-residue confidence, 0-100 (colors above).
+- PAE: how confident the model is about where residue j sits relative to
+  residue i. Low PAE between two domains = their relative placement is
+  trustworthy; high = each domain may be right on its own, but not how they
+  sit relative to each other.
+
+
+WHERE THINGS LIVE
+-----------------
+    env.sh                       session setup (source it every time)
+    color_plddt.py               PyMOL coloring script
+    localcolabfold/              ColabFold install (.pixi/envs/default/)
+    .pixi-home/                  pixi itself + PyMOL
+    .cache/                      AlphaFold weights + package caches
+    .config/                     configs that would otherwise go in ~
+    test_out/                    the 1BJP test run
+
+Remove everything:
+    rm -rf ~/Desktop/phillip_protein_playgorund

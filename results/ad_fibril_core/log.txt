@@ -1,0 +1,5 @@
+2026-10-20 17:57:16,795 Running colabfold 1.6.3 (297da92fdff1348b8c99c2a946d7806a4eb4c25e)
+2026-10-20 17:57:17,136 Running on GPU
+2026-10-20 17:57:17,195 Found 5 citations for tools or databases
+2026-10-20 17:57:17,195 Skipping ad_fibril_core (already done)
+2026-10-20 17:57:17,195 Done
